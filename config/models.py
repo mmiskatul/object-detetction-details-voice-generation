@@ -1,13 +1,12 @@
 # config/models.py
 from transformers import pipeline
 import torch
-import coqui_tts
 
 # Detect device
 device = 0 if torch.cuda.is_available() else -1
 
 # ----------------------------
-# Load Object Detection Model
+# Object Detection
 # ----------------------------
 object_detector = pipeline(
     "object-detection",
@@ -16,7 +15,7 @@ object_detector = pipeline(
 )
 
 # ----------------------------
-# Load Caption Model
+# Image Captioning
 # ----------------------------
 caption_model = pipeline(
     "image-to-text",
@@ -25,6 +24,10 @@ caption_model = pipeline(
 )
 
 # ----------------------------
-# Load Text-to-Speech Model
+# Text-to-Speech (Python 3.12 compatible)
+# Using Hugging Face TTS
 # ----------------------------
-tts_model = coqui_tts.TTS(model_name="tts_models/en/ljspeech/tacotron2-DDC")
+tts_model = pipeline(
+    "text-to-speech",
+    model="espnet/kan-bayashi_ljspeech_tts_train_parallel_wavegan.v1"
+)
