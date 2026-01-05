@@ -3,6 +3,7 @@ from fastapi import FastAPI, File, UploadFile
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from PIL import Image
+import io
 
 from config.models import object_detector, caption_model, tts_model
 from utils.helpers import get_image_hash, get_cached_audio_path
@@ -10,9 +11,9 @@ from utils.helpers import get_image_hash, get_cached_audio_path
 # ----------------------------
 # App Initialization
 # ----------------------------
-app = FastAPI(title="Image → Caption → TTS API")
+app = FastAPI(title="Image → Caption → TTS API (Python 3.12)")
 
-# Allow CORS
+# Allow CORS for frontend testing
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -36,7 +37,7 @@ async def generate_audio(file: UploadFile = File(...)):
         return FileResponse(cached_audio_path, media_type="audio/wav")
 
     # Open image
-    image = Image.open(file.file).convert("RGB")
+    image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
     
     # Step 1: Object Detection
     objects = object_detector(image)
@@ -45,7 +46,16 @@ async def generate_audio(file: UploadFile = File(...)):
     # Step 2: Caption Generation
     sentence = caption_model(image)[0]['generated_text']
     
-    # Step 3: Text-to-Speech
-    tts_model.tts_to_file(text=sentence, file_path=cached_audio_path)
+    # Optional: Append detected objects to sentence for clarity
+    if labels:
+        sentence += f" Detected objects: {', '.join(labels)}."
+    
+    # Step 3: Text-to-Speech using Hugging Face TTS
+    tts_output = tts_model(sentence)
+    audio_bytes = tts_output["wav"]
+    
+    # Save audio to cache
+    with open(cached_audio_path, "wb") as f:
+        f.write(audio_bytes)
     
     return FileResponse(cached_audio_path, media_type="audio/wav")

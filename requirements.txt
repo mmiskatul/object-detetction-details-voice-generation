@@ -1,6 +1,8 @@
 fastapi
 uvicorn
-transformers
 torch
-pillow
-coqui-tts
+transformers
+Pillow
+soundfile
+numpy
+timm
